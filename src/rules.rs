@@ -85,6 +85,7 @@ pub fn rules() -> Vec<Rewrite> {
 
     sz_param!(CAD_IDENTS: bool);
     sz_param!(INV_TRANS: bool);
+    sz_param!(RULER: bool);
 
     let mut rules = vec![
         // rw!("union_comm"; "(Binop Union ?a ?b)" => "(Binop Union ?b ?a)"),
@@ -162,6 +163,68 @@ pub fn rules() -> Vec<Rewrite> {
         rw!("mapi2_mapi2"; "(Map2 ?op (MapI ?n1 ?n2 ?param) (MapI ?n1 ?n2 ?cad))"=> "(MapI ?n1 ?n2 (Affine ?op ?param ?cad))"),
 
     ];
+
+    if *RULER {
+        rules.extend(vec![
+            rw!("union_same"; "(Union ?a ?a)"=> "?a"),
+            rw!("inter_same"; "(Inter ?a ?a)"=> "?a"),
+            rw!("inter_union"; "(Inter ?a (Union ?a ?b))"=> "?a"),
+       
+            rw!("cone_scale";
+               "(Cylinder (Vec3 ?h ?r1 ?r2) ?params ?center)" =>
+               "(Affine Scale (Vec3 1 1 ?h)
+                (Cylinder (Vec3 1 ?r1 ?r2) ?params ?center))"),
+
+            rw!("scale_cone";
+                "(Affine Scale (Vec3 1 1 ?h)
+                  (Cylinder (Vec3 1 ?r1 ?r2) ?params ?center))" =>
+                "(Cylinder (Vec3 ?h ?r1 ?r2) ?params ?center)"
+                // if is_pos(&["?h"])
+            ),
+
+            rw!("cylinder_scale";
+               "(Cylinder (Vec3 ?h ?r ?r) ?params ?center)" =>
+               "(Affine Scale (Vec3 ?r ?r ?h)
+              (Cylinder (Vec3 1 1 1) ?params ?center))"),
+            rw!("scale_cylinder";
+                "(Affine Scale (Vec3 ?r ?r ?h)
+              (Cylinder (Vec3 1 1 1) ?params ?center))" =>
+                "(Cylinder (Vec3 ?h ?r ?r) ?params ?center)"
+                // if is_pos(&["?r", "?h"])
+            ),
+
+            rw!("cube_scale";
+               "(Cube (Vec3 ?x ?y ?z) ?center)" =>
+               "(Affine Scale (Vec3 ?x ?y ?z)
+              (Cube (Vec3 1 1 1) ?center))"),
+            rw!(
+                "scale_cube";
+                "(Affine Scale (Vec3 ?x ?y ?z)
+              (Cube (Vec3 1 1 1) ?center))" =>
+                "(Cube (Vec3 ?x ?y ?z) ?center)"
+                // if is_pos(&["?x", "?y", "?z"])
+            ),
+
+            rw!("sphere_scale";
+               "(Sphere ?r ?params)" =>
+               "(Affine Scale (Vec3 ?r ?r ?r)
+              (Sphere 1 ?params))"),
+            rw!(
+                "scale_sphere";
+                "(Affine Scale (Vec3 ?r ?r ?r)
+              (Sphere 1 ?params))" =>
+                "(Sphere ?r ?params)"
+                // if is_pos(&["?r"])
+            ),
+
+            // affine rules
+
+            rw!("id"; "(Affine Trans (Vec3 0 0 0) ?a)"=> "?a"),
+
+            rw!("combine_scale"; "(Affine Scale (Vec3 ?a ?b ?c) (Affine Scale (Vec3 ?d ?e ?f) ?cad))"=> "(Affine Scale (Vec3 (* ?a ?d) (* ?b ?e) (* ?c ?f)) ?cad)"),
+            rw!("combine_trans"; "(Affine Trans (Vec3 ?a ?b ?c) (Affine Trans (Vec3 ?d ?e ?f) ?cad))"=> "(Affine Trans (Vec3 (+ ?a ?d) (+ ?b ?e) (+ ?c ?f)) ?cad)"),
+        ]);
+    }
 
     if *INV_TRANS {
         rules.extend(vec![

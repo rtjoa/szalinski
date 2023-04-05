@@ -16,6 +16,7 @@ csexp-opts=$(scads:inputs/%.scad=out/%.normal.csexp.opt)
 jsons=$(scads:inputs/%.scad=out/%.normal.json)
 jsons-normal-nocad=$(scads:inputs/%.scad=out/%.normal-nocad.json)
 jsons-normal-noinv=$(scads:inputs/%.scad=out/%.normal-noinv.json)
+jsons-normal-ruler=$(scads:inputs/%.scad=out/%.normal-ruler.json)
 jsons-perturb=$(scads:inputs/%.scad=out/%.perturb.json)
 jsons-perturb-nocad=$(scads:inputs/%.scad=out/%.perturb-nocad.json)
 jsons-perturb-noinv=$(scads:inputs/%.scad=out/%.perturb-noinv.json)
@@ -39,6 +40,7 @@ in_offs: $(scads:inputs/%.scad=out/%.in.off)
 
 aec-table2-nocad: $(filter out/aec-table2/%, $(jsons-normal-nocad))
 aec-table2-noinv: $(filter out/aec-table2/%, $(jsons-normal-noinv))
+aec-table2-ruler: $(filter out/aec-table2/%, $(jsons-normal-ruler))
 aec-table2: $(filter out/aec-table2/%, $(jsons))
 aec-fig15: $(filter out/aec-fig15/%, $(csexp-opts))
 aec-fig15-valid: $(filter out/aec-fig15/%, $(diffs))
@@ -85,6 +87,8 @@ out/%.normal-nocad.json: out/%.normal.csexp $(tgt)/optimize sz_params
 	export $$(cat sz_params | xargs) SZ_CAD_IDENTS=false && $(tgt)/optimize $< $@
 out/%.normal-noinv.json: out/%.normal.csexp $(tgt)/optimize sz_params
 	export $$(cat sz_params | xargs) SZ_INV_TRANS=false && $(tgt)/optimize $< $@
+out/%.normal-ruler.json: out/%.normal.csexp $(tgt)/optimize sz_params
+	export $$(cat sz_params | xargs) SZ_CAD_IDENTS=false SZ_RULER=true && $(tgt)/optimize $< $@
 out/%.perturb.json: out/%.perturb.csexp $(tgt)/optimize sz_params
 	export $$(cat sz_params | xargs) && $(tgt)/optimize $< $@
 out/%.perturb-nocad.json: out/%.perturb.csexp $(tgt)/optimize sz_params
@@ -123,7 +127,7 @@ thingiverse-perturb-noinv: $(filter out/thingiverse/%, $(jsons-perturb-noinv))
 thingiverse-all: thingiverse-normal thingiverse-perturb thingiverse-perturb-nocad thingiverse-perturb-noinv
 
 .PRECIOUS:
-out/aec-table2/table2.csv: ./scripts/table2.py aec-table2-nocad aec-table2-noinv aec-table2
+out/aec-table2/table2.csv: ./scripts/table2.py aec-table2-nocad aec-table2-noinv aec-table2-ruler aec-table2
 	python3 $< $@
 
 out/fig14.pdf: ./scripts/plot-boxes.py thingiverse-all
