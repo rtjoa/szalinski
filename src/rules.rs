@@ -87,6 +87,8 @@ pub fn rules() -> Vec<Rewrite> {
     sz_param!(INV_TRANS: bool);
     sz_param!(RULER: bool);
 
+    let union_inter = !*RULER;
+
     let mut rules = vec![
         // rw!("union_comm"; "(Binop Union ?a ?b)" => "(Binop Union ?b ?a)"),
         // rw!("inter_comm"; "(Binop Inter ?a ?b)" => "(Binop Inter ?b ?a)"),
@@ -137,17 +139,23 @@ pub fn rules() -> Vec<Rewrite> {
         rw!("fold_repeat"; "(Fold ?bop (Map2 ?aff (Repeat ?n ?param) ?cads))"=> "(Affine ?aff ?param (Fold ?bop ?cads))"),
 
         rw!("fold_op"; "(Fold ?bop (Affine ?aff ?param ?cad))"=> "(Affine ?aff ?param (Fold ?bop ?cad))"),
+    ];
 
-        rw!("union_trans"; "(Union (Trans ?x ?y ?z ?a) (Trans ?x ?y ?z ?b))"=> "(Trans ?x ?y ?z (Union ?a ?b))"),
+    if union_inter {
+        rules.extend(vec![
+            rw!("union_trans"; "(Union (Trans ?x ?y ?z ?a) (Trans ?x ?y ?z ?b))"=> "(Trans ?x ?y ?z (Union ?a ?b))"),
+    
+            rw!("inter_empty"; "(Inter ?a Empty)"=> "Empty"),
+    
+            // idempotent
+            rw!("union_same"; "(Union ?a ?a)"=> "?a"),
+            rw!("inter_same"; "(Inter ?a ?a)"=> "?a"),
+    
+            rw!("inter_union"; "(Inter ?a (Union ?a ?b))"=> "?a"),
+        ]);
+    }
 
-        rw!("inter_empty"; "(Inter ?a Empty)"=> "Empty"),
-
-        // idempotent
-        rw!("union_same"; "(Union ?a ?a)"=> "?a"),
-        rw!("inter_same"; "(Inter ?a ?a)"=> "?a"),
-
-        rw!("inter_union"; "(Inter ?a (Union ?a ?b))"=> "?a"),
-
+    rules.extend(vec![
         // partitioning
         rw!("concat"; "(Unpart ?part ?lists)"=> "(Concat ?lists)"),
 
@@ -161,12 +169,23 @@ pub fn rules() -> Vec<Rewrite> {
             "(MapI ?n1 ?n2 (Affine ?op ?formula ?cad))"
             if is_eq("?n", "(* ?n1 ?n2)")),
         rw!("mapi2_mapi2"; "(Map2 ?op (MapI ?n1 ?n2 ?param) (MapI ?n1 ?n2 ?cad))"=> "(MapI ?n1 ?n2 (Affine ?op ?param ?cad))"),
-
-    ];
+    ]);
 
     if *RULER {
         rules.extend(vec![
-            // paste here
+            // Paste ruler output here
+            rw!("ruler1"; "(Affine Trans (Vec3 0 0 0) ?a)" => "?a"),
+            rw!("ruler2"; "?a" => "(Affine Trans (Vec3 0 0 0) ?a)"),
+            rw!("ruler3"; "?a" => "(Affine Scale (Vec3 1 1 1) ?a)"),
+            rw!("ruler4"; "(Affine Scale (Vec3 1 1 1) ?a)" => "?a"),
+            rw!("ruler5"; "(Affine Scale (Vec3 ?b ?b ?b) (Cylinder (Vec3 1 1 1) ?a true))" => "(Cylinder (Vec3 ?b ?b ?b) ?a true)"),
+            rw!("ruler6"; "(Cylinder (Vec3 ?b ?b ?b) ?a true)" => "(Affine Scale (Vec3 ?b ?b ?b) (Cylinder (Vec3 1 1 1) ?a true))"),
+            rw!("ruler7"; "(Affine Scale (Vec3 ?f ?e ?d) (Cube (Vec3 ?c ?b ?a) false))" => "(Affine Scale (Vec3 (* ?f ?c) (* ?e ?b) (* ?d ?a)) (Cube (Vec3 1 1 1) false))"),
+            rw!("ruler8"; "(Affine Scale (Vec3 ?f ?e ?d) (Cube (Vec3 ?c ?b ?a) false))" => "(Cube (Vec3 (* ?f ?c) (* ?e ?b) (* ?d ?a)) false)"),
+            rw!("ruler9"; "(Affine Scale (Vec3 ?f ?d ?b) (Affine Trans (Vec3 (/ ?g ?f) (/ ?e ?d) (/ ?c ?b)) ?a))" => "(Affine Trans (Vec3 ?g ?e ?c) (Affine Scale (Vec3 ?f ?d ?b) ?a))"),
+            rw!("ruler10"; "(Affine Scale (Vec3 ?g ?f ?e) (Affine Trans (Vec3 ?d ?c ?b) ?a))" => "(Affine Trans (Vec3 (* ?d ?g) (* ?c ?f) (* ?b ?e)) (Affine Scale (Vec3 ?g ?f ?e) ?a))"),
+            rw!("ruler11"; "(Affine Trans (Vec3 ?g ?f ?e) (Affine Trans (Vec3 ?d ?c ?b) ?a))" => "(Affine Trans (Vec3 (+ ?g ?d) (+ ?f ?c) (+ ?e ?b)) ?a)"),
+            rw!("ruler12"; "(Affine Scale (Vec3 ?g ?f ?e) (Affine Scale (Vec3 ?d ?c ?b) ?a))" => "(Affine Scale (Vec3 (* ?g ?d) (* ?f ?c) (* ?e ?b)) ?a)"),
         ]);
     }
 
