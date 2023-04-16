@@ -7,7 +7,7 @@ use log::{info, warn};
 use egg::{rewrite as rw, *};
 
 use crate::{
-    cad::{println_cad, Cad, EGraph, MetaAnalysis, Rewrite, Vec3},
+    cad::{Cad, EGraph, MetaAnalysis, Rewrite, Vec3},
     num::{num, Num},
     permute::{Partitioning, Permutation},
 };
@@ -143,15 +143,15 @@ pub fn rules() -> Vec<Rewrite> {
 
     if union_inter {
         rules.extend(vec![
-            rw!("union_trans"; "(Union (Trans ?x ?y ?z ?a) (Trans ?x ?y ?z ?b))"=> "(Trans ?x ?y ?z (Union ?a ?b))"),
+            rw!("union_trans"; "(Binop Union (Affine Trans (Vec3 ?x ?y ?z) ?a) (Affine Trans (Vec3 ?x ?y ?z) ?b))"=> "(Affine Trans (Vec3 ?x ?y ?z) (Binop Union ?a ?b))"),
     
-            rw!("inter_empty"; "(Inter ?a Empty)"=> "Empty"),
+            rw!("inter_empty"; "(Binop Inter ?a Empty)"=> "Empty"),
     
             // idempotent
-            rw!("union_same"; "(Union ?a ?a)"=> "?a"),
-            rw!("inter_same"; "(Inter ?a ?a)"=> "?a"),
+            rw!("union_same"; "(Binop Union ?a ?a)"=> "?a"),
+            rw!("inter_same"; "(Binop Inter ?a ?a)"=> "?a"),
     
-            rw!("inter_union"; "(Inter ?a (Union ?a ?b))"=> "?a"),
+            rw!("inter_union"; "(Binop Inter ?a (Binop Union ?a ?b))"=> "?a"),
         ]);
     }
 
@@ -270,8 +270,8 @@ pub fn rules() -> Vec<Rewrite> {
 
 
             // rw("lift_op",
-            //    "(Union (Affine ?op ?params ?a) (Affine ?op ?params ?b))",
-            //    "(Affine ?op ?params (Union ?a ?b))"),
+            //    "(Binop Union (Affine ?op ?params ?a) (Affine ?op ?params ?b))",
+            //    "(Affine ?op ?params (Binop Union ?a ?b))"),
         ]);
     }
 
@@ -287,12 +287,12 @@ pub fn rules() -> Vec<Rewrite> {
             rw!("trans_scale"; "(Affine Trans (Vec3 ?x ?y ?z) (Affine Scale (Vec3 ?a ?b ?c) ?m))"=> "(Affine Scale (Vec3 ?a ?b ?c) (Affine Trans (Vec3 (/ ?x ?a) (/ ?y ?b) (/ ?z ?c)) ?m))"),
 
             // rw("scale_rotate",
-            //    "(Scale (Vec3 ?a ?a ?a) (Rotate (Vec3 ?x ?y ?z) ?m))",
-            //    "(Rotate (Vec3 ?x ?y ?z) (Scale (Vec3 ?a ?a ?a) ?m))"),
+            //    "(Affine Scale (Vec3 ?a ?a ?a) (Affine Rotate (Vec3 ?x ?y ?z) ?m))",
+            //    "(Affine Rotate (Vec3 ?x ?y ?z) (Affine Scale (Vec3 ?a ?a ?a) ?m))"),
 
             // rw("rotate_scale",
-            //    "(Scale (Vec3 ?a ?a ?a) (Rotate (Vec3 ?x ?y ?z) ?m))",
-            //    "(Rotate (Vec3 ?x ?y ?z) (Scale (Vec3 ?a ?a ?a) ?m))"),
+            //    "(Affine Scale (Vec3 ?a ?a ?a) (Affine Rotate (Vec3 ?x ?y ?z) ?m))",
+            //    "(Affine Rotate (Vec3 ?x ?y ?z) (Affine Scale (Vec3 ?a ?a ?a) ?m))"),
 
             // primitives
 
@@ -433,7 +433,7 @@ pub fn rules() -> Vec<Rewrite> {
         info!("Using suspect rules");
         println!("Using suspect rules");
         rules.extend(vec![
-            rw!("union_comm"; "(Union ?a ?b)"=> "(Union ?b ?a)"),
+            rw!("union_comm"; "(Binop Union ?a ?b)"=> "(Binop Union ?b ?a)"),
             rw!("combine_scale"; "(Affine Scale (Vec3 ?a ?b ?c) (Affine Scale (Vec3 ?d ?e ?f) ?cad))"=> "(Affine Scale (Vec3 (* ?a ?d) (* ?b ?e) (* ?c ?f)) ?cad)"),
         ]);
     } else {
@@ -673,11 +673,6 @@ impl Applier<Cad, MetaAnalysis> for ListApplier {
         _searcher_ast: Option<&PatternAst<Cad>>,
         _rule_name: Symbol,
     ) -> Vec<Id> {
-        // let ids: Vec<Id> = get_meta_list!(egraph, map[self.var])
-        //     .iter()
-        //     .copied()
-        //     .map(|id| egraph.find(id))
-        //     .collect();
         let ids: Vec<Id> = get_meta_list!(egraph, map[self.var]).clone();
         // println!("LISTAPPLIER: {:?}", ids);
         // println!("ids: {:?}", ids);
