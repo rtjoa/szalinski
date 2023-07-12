@@ -25,6 +25,6 @@ def set_rules(filename, lines_to_insert, start="RULER RULES START", end="RULER R
     with open(filename, "w") as file:
         file.writelines(through_start + lines_to_insert + from_end)
 
-rule_lines = get_rules("rules.txt")
+rule_lines = get_rules("out/rules.txt")
 rule_lines = ["rules.extend(vec![\n", *rule_lines, "]);\n"]
 set_rules("src/rules.rs", rule_lines)
