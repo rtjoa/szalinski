@@ -9,9 +9,9 @@ df = pd.read_csv(s, index_col=False)
 df = df.rename(columns={col: col.strip() for col in df.columns})
 
 INIT = 'Init'
-BASELINE = 'Baseline'
-SZ = 'Szalinski'
-RULER = "Szalinski w/ \\tool's CAD"
+BASELINE = 'No Identities'
+SZ = "Szalinski's Identities"
+RULER = "Renumo's Identities"
 
 df = df.rename(columns={
     'c_in': INIT,
@@ -59,5 +59,23 @@ for line in s.split('\n'):
     final.append(line)
 
 final = final[2:-3]
-print('\n'.join(final))
-   
+beginning = [
+    '\\documentclass[letterpaper]{article}',
+    '\\usepackage[margin=1in,footskip=0.25in]{geometry}',
+    '\\begin{document}',
+    '\\begin{table}[h]',
+    '\\footnotesize',
+    '\\begin{tabular}{lcccc}'
+]
+end = [
+    '\\end{tabular}',
+    '\\end{table}'
+    '\\end{document}'
+]
+with open("table.tex", "w") as f:
+    lines = [i for i in final if "midrule" not in i]
+    f.write('\n'.join(beginning))
+    f.write('\n')
+    f.write('\n'.join(lines))
+    f.write('\n')
+    f.write('\n'.join(end))
