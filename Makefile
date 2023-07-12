@@ -68,7 +68,7 @@ print-%:
 
 out/%.raw.csg: inputs/%.scad
 	@mkdir -p $(dir $@)
-	openscad -o $@ $<
+	openscad -o ~/ruler/scripts/oopsla23/table_4/szalinski/$@ ~/ruler/scripts/oopsla23/table_4/szalinski/$<
 
 out/%.fn.csg: ./scripts/reduce-fn.py out/%.raw.csg
 	$^ $@
